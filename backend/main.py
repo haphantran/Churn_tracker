@@ -15,39 +15,30 @@ app = FastAPI()
 
 
 @app.post("/auth/signup")
-async def signup(data: schemas.UserCreate):  # Expect data in request body
+async def signup(data: schemas.UserCreate):
     try:
+        # Remove the await keyword here
+        print(data.model_dump())
         user = supabase.auth.sign_up(data.model_dump())
-        # Check for errors
-        if user.error:
+        # Check for errors in the data attribute
+        if not user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=user.error.message
+                status_code=status.HTTP_400_BAD_REQUEST, detail=user.data.error.message
             )
-        return {"message": "User created successfully"}
+        return {"message": "User created successfully", "user": user}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @app.post("/auth/login")
-async def login(email: str, password: str):
+async def login(data: schemas.UserCreate):  # Expect data in request body
     try:
-        # Authenticate the user with Supabase
-        data = await supabase.auth.sign_in_with_password(
-            {
-                "email": email,
-                "password": password,
-            }
-        )
-        # Check for errors
-        if data.error:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=data.error.message
-            )
-        # Get the access token from the response
-        access_token = data.session.access_token
-        return {"access_token": access_token, "token_type": "bearer"}
+        user = supabase.auth.sign_in_with_password(data.model_dump())
+        if not user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User login failed")
+        return {"message": "User login successfully", "user": user}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @app.post("/auth/google/login")
@@ -69,10 +60,12 @@ async def google_login():
 
 @app.post("/credit_cards/", response_model=schemas.CreditCard)
 async def create_credit_card(
-    credit_card: schemas.CreditCardCreate, db: Session = Depends(get_db)
+    credit_card: schemas.CreditCardCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)  # Protect the endpoint
 ):
-    # Extract the user_id explicitly
-    user_id = credit_card.user_id
+     # Access the user's ID from the Supabase user object
+    user_id = current_user.id
 
     # Create the CreditCard object with the user_id
     db_credit_card = models.CreditCard(
