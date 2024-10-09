@@ -50,7 +50,7 @@ from .config import settings
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # Placeholder for OAuth2
 
 
-async def get_current_user(access_token: str = Header(...)):
+async def get_current_user(access_token: str = Depends(oauth2_scheme)):
     try:
         # Verify the Supabase access token
         user = supabase.auth.get_user(access_token)
@@ -59,5 +59,5 @@ async def get_current_user(access_token: str = Header(...)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired access token",
+            detail=f"Invalid or expired access token: {str(e)}",
         )

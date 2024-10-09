@@ -1,9 +1,9 @@
 from datetime import date
 from pydantic import BaseModel, Field
-
+import uuid
 
 class CreditCardBase(BaseModel):
-    user_id: int 
+    user_id: uuid.UUID
     card_name: str
     card_holder: str
     ending_number: str | None = None  # Optional field
@@ -49,14 +49,12 @@ class Bonus(BonusBase):
     class Config:
         from_attributes = True
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
+    id: uuid.UUID
     email: str
 
-class UserCreate(UserBase):
-    password: str  # Add the password field
-
-class User(UserBase):
-    id: int
-
+class User(UserCreate):
+    credit_cards: list[CreditCard] = []
     class Config:
         from_attributes = True
+

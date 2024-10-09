@@ -1,10 +1,11 @@
 from datetime import datetime
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Header
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Annotated
 from sqlalchemy.orm import Session
-
-
 from . import models, schemas
+
 from .dependencies import get_db, get_current_user, supabase
 
 import logging
@@ -12,6 +13,15 @@ import logging
 logging.basicConfig()
 logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 
 @app.post("/auth/signup")
@@ -35,7 +45,9 @@ async def login(data: schemas.UserCreate):  # Expect data in request body
     try:
         user = supabase.auth.sign_in_with_password(data.model_dump())
         if not user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User login failed")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="User login failed"
+            )
         return {"message": "User login successfully", "user": user}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -62,22 +74,13 @@ async def google_login():
 async def create_credit_card(
     credit_card: schemas.CreditCardCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)  # Protect the endpoint
+    current_user: dict = Depends(get_current_user)
 ):
-     # Access the user's ID from the Supabase user object
-    user_id = current_user.id
-
-    # Create the CreditCard object with the user_id
-    db_credit_card = models.CreditCard(
-        user_id=credit_card.user_id,
-        card_name=credit_card.card_name,
-        card_holder=credit_card.card_holder,
-        ending_number=credit_card.ending_number,
-        bank_provider=credit_card.bank_provider,
-        welcome_bonus=credit_card.welcome_bonus,
-        welcome_spending_amount=credit_card.welcome_spending_amount,
-        welcome_spending_deadline=credit_card.welcome_spending_deadline,
-    )
+    # Access user_id from Supabase user
+    credit_card_data = credit_card.model_dump()
+    # Add user_id to credit_card_data
+    credit_card_data['user_id'] = current_user.id
+    db_credit_card = models.CreditCard(**credit_card_data)
     db.add(db_credit_card)
     db.commit()
     db.refresh(db_credit_card)
@@ -85,9 +88,27 @@ async def create_credit_card(
 
 
 @app.get("/credit_cards/", response_model=list[schemas.CreditCard])
-async def read_credit_cards(db: Session = Depends(get_db)):
-    credit_cards = db.query(models.CreditCard).all()
-    return credit_cards
+async def read_credit_cards(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user) 
+):
+    """Retrieve all credit cards for the current user."""
+    print('-----------------------------')
+    print(current_user)
+    print(type(current_user))
+    print(current_user.user.id)
+    if current_user:
+        credit_cards = (
+            db.query(models.CreditCard)
+            .filter(models.CreditCard.user_id == current_user.user.id)
+            .all()
+        )
+        return credit_cards
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
 
 
 @app.get("/credit_cards/{credit_card_id}", response_model=schemas.CreditCard)
@@ -224,47 +245,4 @@ async def delete_bonus(bonus_id: int, db: Session = Depends(get_db)):
     if db_bonus is None:
         raise HTTPException(status_code=404, detail="Bonus not found")
     db.delete(db_bonus)
-    db.commit()
-
-
-@app.post("/users/", response_model=schemas.User)
-async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = models.User(**user.model_dump())
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-@app.get("/users/", response_model=list[schemas.User])
-async def read_users(db: Session = Depends(get_db)):
-    """Retrieve all users."""
-    users = db.query(models.User).all()
-    return users
-
-
-@app.put("/users/{user_id}", response_model=schemas.User)
-async def update_user(
-    user_id: int, user: schemas.UserCreate, db: Session = Depends(get_db)
-):
-    """Update a user."""
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Update the user's email
-    db_user.email = user.email
-
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-@app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, db: Session = Depends(get_db)):
-    """Delete a user."""
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    db.delete(db_user)
     db.commit()
