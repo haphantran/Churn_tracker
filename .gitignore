@@ -5,7 +5,7 @@ __pycache__/
 instance/
 .pytest_cache/
 .env
-.creditcard_venv/*
+.creditcard_venv
 
 # FastAPI
 *.log
