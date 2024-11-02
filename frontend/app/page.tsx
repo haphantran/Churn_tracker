@@ -4,14 +4,6 @@ export default function Home() {
     return (
         <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
             <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-                <Image
-                    className="dark:invert"
-                    src="/images/logo.png" // Placeholder logo path
-                    alt="Credit Cards Churning Tracker logo"
-                    width={180}
-                    height={38}
-                    priority
-                />
                 <h1 className="text-2xl font-bold">Welcome to Credit Cards Churning Tracker</h1>
                 <p className="text-center sm:text-left">
                     Track and manage your credit card churns efficiently.
@@ -28,13 +20,6 @@ export default function Home() {
                         className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
                         href="/credit-cards/new"
                     >
-                        <Image
-                            className="dark:invert"
-                            src="/icons/add-icon.svg" // Placeholder add icon path
-                            alt="Add card icon"
-                            width={20}
-                            height={20}
-                        />
                         Add Card
                     </a>
                     <a
