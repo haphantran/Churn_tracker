@@ -8,9 +8,6 @@ class CreditCardBase(BaseModel):
     card_holder: str
     ending_number: str | None = None  # Optional field
     bank_provider: str | None = None  # Optional field
-    welcome_bonus: str
-    welcome_spending_amount: float
-    welcome_spending_deadline: date  # Use datetime.date for dates
 
 
 class CreditCardCreate(CreditCardBase):
@@ -52,9 +49,6 @@ class Bonus(BonusBase):
 class UserCreate(BaseModel):
     id: uuid.UUID
     email: str
-
-class User(UserCreate):
-    credit_cards: list[CreditCard] = []
     class Config:
         from_attributes = True
 

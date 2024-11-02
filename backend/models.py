@@ -23,9 +23,6 @@ class CreditCard(Base):
     card_holder = Column(String)
     ending_number = Column(String)  # Last 4 digits
     bank_provider = Column(String)
-    welcome_bonus = Column(String)
-    welcome_spending_amount = Column(Float)
-    welcome_spending_deadline = Column(Date)
     notes = Column(String, nullable=True)
     open_date = Column(Date, nullable=True)
     approved_date = Column(Date, nullable=True)
@@ -37,7 +34,7 @@ class Bonus(Base):
     __tablename__ = "bonuses"
     id = Column(Integer, primary_key=True, index=True)
     credit_card_id = Column(Integer, ForeignKey("credit_cards.id"))
-    bonus_type = Column(String)  # e.g., "yearly spending", "quarterly spending"
+    bonus_type = Column(String)  # e.g., "Welcome" "yearly spending", "quarterly spending"
     points = Column(Integer)
     amount_spending_required = Column(Float)
     deadline = Column(Date)

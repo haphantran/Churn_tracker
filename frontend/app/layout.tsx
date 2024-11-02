@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+"use client";
 import localFont from "next/font/local";
 import "./globals.css";
-import NavBar from '../components/NavBar'
-
+import NavBar from "../components/NavBar";
+import { AuthProviderComponent } from "../contexts/AuthContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,10 +15,7 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: 'Churn-tracking',
-  description: 'App to track credit cards churning',
-}
+// Metadata has been moved to a separate file to comply with "use client" directive
 
 export default function RootLayout({
   children,
@@ -29,9 +26,11 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          >
-              <NavBar />
-        {children}
+      >
+        <AuthProviderComponent>
+          <NavBar />
+          {children}
+        </AuthProviderComponent>
       </body>
     </html>
   );

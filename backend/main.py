@@ -24,34 +24,6 @@ app.add_middleware(
 )
 
 
-@app.post("/auth/signup")
-async def signup(data: schemas.UserCreate):
-    try:
-        # Remove the await keyword here
-        print(data.model_dump())
-        user = supabase.auth.sign_up(data.model_dump())
-        # Check for errors in the data attribute
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=user.data.error.message
-            )
-        return {"message": "User created successfully", "user": user}
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@app.post("/auth/login")
-async def login(data: schemas.UserCreate):  # Expect data in request body
-    try:
-        user = supabase.auth.sign_in_with_password(data.model_dump())
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="User login failed"
-            )
-        return {"message": "User login successfully", "user": user}
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
 
 @app.post("/auth/google/login")
 async def google_login():
@@ -79,7 +51,7 @@ async def create_credit_card(
     # Access user_id from Supabase user
     credit_card_data = credit_card.model_dump()
     # Add user_id to credit_card_data
-    credit_card_data['user_id'] = current_user.id
+    credit_card_data['user_id'] = current_user.user.id
     db_credit_card = models.CreditCard(**credit_card_data)
     db.add(db_credit_card)
     db.commit()
@@ -93,10 +65,6 @@ async def read_credit_cards(
     current_user: dict = Depends(get_current_user) 
 ):
     """Retrieve all credit cards for the current user."""
-    print('-----------------------------')
-    print(current_user)
-    print(type(current_user))
-    print(current_user.user.id)
     if current_user:
         credit_cards = (
             db.query(models.CreditCard)
